@@ -1,1 +1,1 @@
-./gradlew build && ./gradlew install && ./app/build/bin/app
+./gradlew build && ./gradlew install && ./app/build/install/app/bin/app

@@ -13,8 +13,6 @@ import gravitysim.objects.Circle;
 
 public class Window extends JFrame {
     private class Panel extends JPanel {
-        public Panel() {
-        }
 
         @Override
         public void paintComponent(Graphics g) {

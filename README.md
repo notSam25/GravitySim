@@ -12,3 +12,6 @@ A build script has been added because typing out the commands inside it are a bi
 chmod +x ./buildAndRun.sh
 ./buildAndRun.sh
 ```
+
+# Media
+> [Video Link(Streamable.com)](https://streamable.com/wyw0zd)

@@ -19,9 +19,9 @@ public class Window extends JFrame {
             super.paintComponent(g);
             for (Circle circle : getCircles()) {
                 g.setColor(Color.blue);
-                g.fillOval(circle.getPosition()[0], circle.getPosition()[1], circle.getRadius() * 5, circle.getRadius() * 5);
+                g.fillOval(circle.getPosition()[0] - circle.getRadius(), circle.getPosition()[1] - circle.getRadius(),
+                        circle.getRadius() * 5, circle.getRadius() * 5);
             }
-
             g.dispose();
         }
 
@@ -36,44 +36,42 @@ public class Window extends JFrame {
         private Vector<Circle> m_Circles = new Vector<>();
     }
 
-    public void update() {
-        double speed = 0.05;
-        int gravity = 10;
+    public void update(int tick) {
+        double speed = 0.006f;
+        double gravityConstant = 200;
 
         for (Circle curCircle : this.m_Panel.getCircles()) {
-            curCircle.m_AccelerationX = 0;
-            curCircle.m_AccelerationY = 0;
-
             for (Circle neighborCircle : this.m_Panel.getCircles()) {
 
-                if(neighborCircle == curCircle)
+                if (neighborCircle == curCircle /*|| this.m_Panel.getCircles().elementAt(0) == curCircle*/)
                     continue;
 
-                // get the difference in positions from neighbor
-                int Dx = neighborCircle.getPosition()[0] - curCircle.getPosition()[0],
-                        Dy = neighborCircle.getPosition()[1] - curCircle.getPosition()[1];
+                // d = sqrt((x2 -x1)^2 + (y2 - y1)^2)
+                double distance = Math.sqrt(Math.pow(neighborCircle.getPosition()[0] - curCircle.getPosition()[0], 2)
+                        + Math.pow(neighborCircle.getPosition()[1] - curCircle.getPosition()[1], 2) + 1);
 
-                // calculate acceleration relative to the neighbor
-                // D = sqrt((Dx)^2 + (Dy)^2)
-                // modified it because I didn't want to type all the code for finding diffrence
-                // again.
-                double distance = Math.sqrt(Math.pow(Dx, 2) + Math.pow(Dy, 2) + Math.pow(12, 2));
+                // Ag = (G * Mass) / distance * distance^
+                curCircle.m_AccelerationX += (gravityConstant * neighborCircle.getMass())
+                        / Math.pow(distance, 2) * (neighborCircle.getPosition()[0] - curCircle.getPosition()[0]);
 
-                // calculate acceleration due to gravity
-                // A = GM / r^2
-                curCircle.m_AccelerationX += (gravity * neighborCircle.getMass() * Dx / Math.pow(distance, 2));
-                curCircle.m_AccelerationY += (gravity * neighborCircle.getMass() * Dy / Math.pow(distance, 2));
+                curCircle.m_AccelerationY += (gravityConstant * neighborCircle.getMass()) / Math.pow(distance, 2)
+                        * (neighborCircle.getPosition()[1] - curCircle.getPosition()[1]);
             }
 
-            // Calculate velocity, replace time with a smoothing value
-            // v = u + at
-            // velocity = initialVelocity + time * acceleration
-            curCircle.m_VelocityX += curCircle.m_AccelerationX * (speed / 2);
-            curCircle.m_VelocityY += curCircle.m_AccelerationY * (speed / 2);
+            // Vf = Vi + A * t
+            curCircle.m_VelocityX += curCircle.m_AccelerationX * speed;
+            curCircle.m_VelocityY += curCircle.m_AccelerationY * speed;
 
-            // calculate position
-            curCircle.m_X += curCircle.m_VelocityX * speed;
-            curCircle.m_Y += curCircle.m_VelocityY * speed;
+            // pos = pos + Vf * t
+            curCircle.m_X += (curCircle.m_VelocityX * speed) / 2;
+            curCircle.m_Y += (curCircle.m_VelocityY * speed) / 2;
+
+            // Vf = Vi + A * t
+            curCircle.m_VelocityX += curCircle.m_AccelerationX * speed;
+            curCircle.m_VelocityY += curCircle.m_AccelerationY * speed;
+
+            curCircle.m_AccelerationX = 0;
+            curCircle.m_AccelerationY = 0;
         }
     }
 
@@ -95,6 +93,9 @@ public class Window extends JFrame {
 
         int TPS = 0;
 
+        //this.m_Panel.addCircle(new Circle(400, 400));
+        //this.m_Panel.getCircles().elementAt(0).m_Mass = 800;
+
         while (true) {
             MouseListener.update();
 
@@ -102,12 +103,11 @@ public class Window extends JFrame {
                 System.out.println("Circle Added");
                 this.m_Panel.addCircle(new Circle(MouseListener.getMouseWindowPosition()));
             }
-                
-
-            update();
-
-            this.repaint();
             
+            update(TPS);
+            
+            this.repaint();
+
             TPS++;
 
             double remainder = (next - System.nanoTime()) / 1000000000;
